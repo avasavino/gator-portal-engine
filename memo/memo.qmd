@@ -7,6 +7,19 @@ format: pdf
 ## What TTS measures
 
 ## Data 
+All data is public and comes from CollegeFootballData.com (CFBD), pulled into R with the cfbfastR package. I used every transfer portal entry from 2022 through 2026, along with season stats for every FBS player from 2021 through 2026. The 2021 season is included so that 2022 transfers have a "before" season. A transfer counts as usable is he moved from one FBS school to another and had at least 10 touches (carries plus catches) in both the season before he transferred and the season after. That leaves 226 usable running back transfers from 2022-2025, which are the players TTS learns from. The 2026 class is still mid-season, so those players get scored, not used for training. 
+
+| Portal year | RB | WR | QB | TE |
+|---|---|---|---|---|
+| 2022 | 39 | 58 | 35 | 3 |
+| 2023 | 46 | 62 | 37 | 12 |
+| 2024 | 64 | 76 | 53 | 21 |
+| 2025 | 77 | 93 | 44 | 20 |
+| **Total** | **226** | **289** | **169** | **56** |
+
+: Usable FBS-to-FBS transfers by portal year and position
+
+This project covers running backs only. Running backs give a large enough sample, and they allow a direct comparison to my 2025 RB Breakdown. PLayers were matched between the portal list and the stat tables by name and school. A few nickname mismatches (for example "Cam" vs. "Cameron") still needs fixing, so these counts are slightly low. 
 
 ## How it was built 
 
