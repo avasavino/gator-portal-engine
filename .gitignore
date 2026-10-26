@@ -1,0 +1,13 @@
+# Secrets: holds CFBD_API_KEY, never upload
+.Renviron
+
+# Downloaded data: big, and can be re-downloaded any time
+cache/
+
+# R session leftovers
+.Rhistory
+.RData
+.Rproj.user/
+
+# Mac folder junk
+.DS_Store

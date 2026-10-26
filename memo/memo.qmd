@@ -1,0 +1,17 @@
+---
+title: "Transfer Translation Score (TTS): Methods Memo"
+author: "Ava Savino"
+format: pdf 
+--- 
+
+## What TTS measures
+
+## Data 
+
+## How it was built 
+
+## Does it work (backtest) 
+
+## Florida fit 
+
+## Limitations 
