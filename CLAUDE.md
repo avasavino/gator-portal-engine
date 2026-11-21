@@ -86,6 +86,7 @@ gator-portal-engine/
 - **Explosive run:** pick one cutoff (e.g. 12+ yds) and never change it.
 - **Situations:** early downs (1st/2nd); passing downs (2nd & long, 3rd/4th & long); short yardage (3rd/4th, ≤2 to go); red zone (inside opp 20).
 - **Touch share** = player carries / team carries (stand-in for snap counts).
+- **Receiving = per catch, not per target (Nov 9, 2026).** Public PBP names the receiver on every catch but on only ~1/3 of incompletions (`incompletion_player_id` is the *passer*), so targets can't be counted fairly across schools. Use catches, rec yds, **rec EPA per catch** (`reception_player_id`). State in memo Limitations (can't see drops/misses).
 - **Opponent adjustment:** ridge on sparse `~ rusher + defense - 1`, `cv.glmnet(alpha=0)`, per season, `coef(fit, s="lambda.min")`. Fallback: simple schedule-strength subtraction (build first).
 - **Shrinkage:** `(n*rate + k*avg)/(n + k)`; k per stat from split-half reliability.
 - **Target:** adjusted EPA/play (carries+targets) at new school, min touches (e.g. 50); separate yes/no "earned playing time."

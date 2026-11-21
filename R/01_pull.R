@@ -23,3 +23,19 @@ fbs_teams <- lapply(2021:2026, function(y) {
     mutate(year = y)   # tag each row with its year so we can tell them apart after stacking
 }) |>
   bind_rows()
+
+#----Play-by-play, one file per season ---------------------------------------
+# Need 2021 and 2022 transfers' "before" season. 
+# Big files, so we only save them here, not keep them all in memory at once 
+# 2026 is mid-season: delete cache/pbp_2026.parquet to grav newer games later 
+
+# runs code inside once per year
+for (y in 2021:2026) {
+  get_cached(paste0("pbp_", y), function() load_cfb_pbp(seasons = y))
+}
+
+pbp24 |>
+  filter(play_type == "Rush") |>
+  select(pos_team, def_pos_team, down, distance, yards_to_goal,
+          rusher_player, yards_gained, EPA, success) |>
+  head(5)

@@ -33,3 +33,10 @@ Oct 25, 2026
 - Note: backtest test set = 77 RBs (2025) → ~19 per quartile, so the headline will be noisy. Counts are a floor; name mismatches get fixed Oct 30.
 Can't use TE because not enough data (<100) 
 
+Nov 3, 2026 
+- Downloaded play-by-play 2021-2026 into cache/ (2026 frozen as of Oct 30). 2024 = 277,048 plays x 362 columns. 
+- Column names I'll use: 
+    - Run play? 'rush' (1 = yes) Runner: 'rusher_player_name', 'rush_player_id' Yards: 'yds_rushed' TD:  'rush_td'
+    - Teams: 'pos_team' (offense), 'def_pos_team' (defense) Situation: 'down', 'distance'
+    - Value: 'EPA', 'success' (1 = stayed on schedule) 
+- Note: run plays include QBs (ex Jalen Milrow) -> filter RBs later.
