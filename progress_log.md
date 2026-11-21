@@ -40,3 +40,7 @@ Nov 3, 2026
     - Teams: 'pos_team' (offense), 'def_pos_team' (defense) Situation: 'down', 'distance'
     - Value: 'EPA', 'success' (1 = stayed on schedule) 
 - Note: run plays include QBs (ex Jalen Milrow) -> filter RBs later.
+
+Nov 20, 2026
+- Checked my EPA/carry vs CFBD PPA (2024, 253 backs with 100+ carries): Spearman 0.87. CFBD runs ~0.1/carry higher for everyone (different model scale), no big outliers. Added to memo → Data.
+- Phase 1 done (Week 2). Next: Week 3 Mon — simple defense ratings.
