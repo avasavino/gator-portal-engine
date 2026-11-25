@@ -19,6 +19,11 @@ get_cached <- function(name, fetch) {
   message("Downloading ", name, " ...")   # prints a note so you know it's hitting the internet
   data <- fetch()
 
+  # Don't save an empty download (e.g. API said no): stop so it retries next time
+  if (is.null(data) || nrow(data) == 0) {
+    stop("Download for ", name, " came back empty - nothing saved.")
+  }
+
   # Step 3: save it for next time, then hand it back.
   dir.create("cache", showWarnings = FALSE)   # makes cache/ if it's missing (e.g. fresh clone)
   write_parquet(data, path)

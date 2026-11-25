@@ -10,12 +10,15 @@ One or two lines per work session: what I did, what's next.
 10/25 
 - Complete columns = season, first_name, last_name, position, origin, transfer_date, eligibility 
 - Columns with holes = destination, rating, stars 
-- Num of players with no new school each year =    <int>   <int>         <int>
-1   2022    2273           906
-2   2023    2502           895
-3   2024    3378           724
-4   2025    4499           729
-5   2026    4484           980
+- Players with no new school each year:
+
+  | season | entries | no new school |
+  |---|---|---|
+  | 2022 | 2273 | 906 |
+  | 2023 | 2502 | 895 |
+  | 2024 | 3378 | 724 |
+  | 2025 | 4499 | 729 |
+  | 2026 | 4484 | 980 |
 
 ## 2026-10-25 (Sun)
 - Wrote R/loader.R (get_cached) and R/01_pull.R (portal 2022–26, FBS teams 2021–26). Built R/00_counts.R.
@@ -41,6 +44,26 @@ Nov 3, 2026
     - Value: 'EPA', 'success' (1 = stayed on schedule) 
 - Note: run plays include QBs (ex Jalen Milrow) -> filter RBs later.
 
+Nov 9–10, 2026
+- Built R/02_player_seasons.R → data/player_seasons.parquet (one row per player per team per season, 2021–2026).
+  - Rushing: carries, EPA, EPA/carry, success rate, explosive rate (12+ yds, fixed), first downs, fumbles.
+  - Receiving: catches, rec yds, rec EPA per catch. Per catch, not per target, because public PBP doesn't name the receiver on ~2/3 of incompletions.
+  - Situations: early downs, passing downs (2nd & 8+, 3rd/4th & 5+), short yardage (3rd/4th & ≤2), red zone (inside 20).
+  - Touch share = carries / team carries.
+- Sanity checks pass: touch share ≤ 1, all rates ≤ 1, no duplicate player-seasons. Fixed a bug: some plays had the runner's ID but a blank name, which split players into 2 rows (2,918 duplicates). Now grouped by ID only.
+
 Nov 20, 2026
+- Built R/02b_transfers.R → data/transfers.parquet. Matched portal RBs to stat IDs by cleaned name (drops Jr./III, punctuation) + old school + season before; hand-fixed 7 nicknames (e.g. Cam/Cameron Wiley); ties broken by most carries.
+- Portal RBs 2022–26: 1,269 · matched 869 · unmatched 400 (mostly backs with no carries the year before).
+- 699 transfers landed somewhere; 605 have both before AND after stats, 94 have no after carries.
 - Checked my EPA/carry vs CFBD PPA (2024, 253 backs with 100+ carries): Spearman 0.87. CFBD runs ~0.1/carry higher for everyone (different model scale), no big outliers. Added to memo → Data.
 - Phase 1 done (Week 2). Next: Week 3 Mon — simple defense ratings.
+
+Nov 24, 2026 
+- Built R/03_adjust.R: simple defense ratings (avg EPA/carry allowed per defense-season) -> each back's schedule ease -> adj_epa_simple = EPA/carry - schedule ease. 
+- 2024 check (200+ carries): toughest schedules = SEC/Big Ten backs (Sampson, Wisner), adjusted UP; easiest = FCS/G5 (Illinois State, UC Davis, Boise State), adjusted DOWN. Jeanty 0.223 -> 0.189, still elite. 
+- Ridge opponent adjustment: runner + defense rated together per season with cv.glmnet(alpha = 0), for EPA, success rate, and explosive rate. 17,588 player-seasons, 2021–26.
+- Fixed a ridge bug: glmnet's default rescaling made 1-carry backs get the MOST extreme ratings. standardize = FALSE fixes it, so low-carry backs now shrink most toward average.
+- Picked adjustment: Using ridge because it repeats best year to year (Spearman, same-team backs w/ 100+ carries, n = 296: raw 0.259, simple 0.281, ridge 0.313). Simple kept as fallback. CFBD's adjusted metric (WEPA) needs a paid key (HTTP 401), so used this test instead.
+- Fixed loader.R so it refuses to save empty downloads. Saved data/adjusted_simple.parquet + data/adjusted_ridge.parquet. Memo updated.
+- Next: shrinkage (Week 3 Thu box).

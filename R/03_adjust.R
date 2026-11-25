@@ -34,3 +34,54 @@ simple_adjust <- function(y) {
 
 adjusted <- lapply(2021:2026, simple_adjust) |>
     bind_rows()
+# --- Ridge adjustment ------------------------------------------------------
+# Rates every runner AND every defense at the same time, so neither rating
+# is thrown off by who they happened to play. Same method as cfbfastR's team ratings.
+library(Matrix)
+library(glmnet)
+
+# Explosive run cutoff - same as 02_player_seasons.R, never change
+EXPLOSIVE_YDS <- 12
+
+# ridge_ratings(): runs ridge on ONE outcome, returns each runner's rating
+# (his result per carry with the defenses removed)
+ridge_ratings <- function(X, outcome) {
+    set.seed(2026)
+    fit <- cv.glmnet(X, outcome, alpha = 0, standardize = FALSE)
+    b <- as.matrix(coef(fit, s = "lambda.min"))
+    b <- b[startsWith(rownames(b), "rusher"), 1]
+    tibble(rush_player_id = as.numeric(sub("rusher", "", names(b))), rating = b)
+}
+
+# ridge_adjust(): for one season, adjusts EPA, success, and explosive rate
+ridge_adjust <- function(y) {
+    runs <- read_parquet(paste0("cache/pbp_", y, ".parquet")) |>
+        filter(rush == 1, !is.na(rush_player_id), !is.na(EPA), !is.na(def_pos_team),
+               !is.na(success), !is.na(yds_rushed)) |>
+        mutate(
+            rusher    = factor(rush_player_id),
+            defense   = factor(def_pos_team),
+            explosive = as.numeric(yds_rushed >= EXPLOSIVE_YDS)
+        )
+
+    # One row per carry, one column per runner and per defense (mostly zeros)
+    X <- sparse.model.matrix(~ rusher + defense - 1, data = runs)
+
+    # Same model three times, each predicting a different stat
+    epa  <- ridge_ratings(X, runs$EPA)       |> rename(ridge_epa = rating)
+    succ <- ridge_ratings(X, runs$success)   |> rename(ridge_success = rating)
+    expl <- ridge_ratings(X, runs$explosive) |> rename(ridge_explosive = rating)
+
+    epa |>
+        left_join(succ, by = "rush_player_id") |>
+        left_join(expl, by = "rush_player_id") |>
+        mutate(season = y)
+}
+
+# Run ridge for every season and stack them
+ridged <- lapply(2021:2026, ridge_adjust) |>
+    bind_rows()
+
+# Save both adjustments so later steps don't have to wait ~30 min to rebuild them
+write_parquet(adjusted, "data/adjusted_simple.parquet")
+write_parquet(ridged, "data/adjusted_ridge.parquet")
