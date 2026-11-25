@@ -66,4 +66,13 @@ Nov 24, 2026
 - Fixed a ridge bug: glmnet's default rescaling made 1-carry backs get the MOST extreme ratings. standardize = FALSE fixes it, so low-carry backs now shrink most toward average.
 - Picked adjustment: Using ridge because it repeats best year to year (Spearman, same-team backs w/ 100+ carries, n = 296: raw 0.259, simple 0.281, ridge 0.313). Simple kept as fallback. CFBD's adjusted metric (WEPA) needs a paid key (HTTP 401), so used this test instead.
 - Fixed loader.R so it refuses to save empty downloads. Saved data/adjusted_simple.parquet + data/adjusted_ridge.parquet. Memo updated.
-- Next: shrinkage (Week 3 Thu box).
+
+- Split-half test (R/00_split_half.R, RB plays 2021–25): k per stat for shrinkage
+  - rec EPA per catch: r = 0.11 → k ≈ 75 catches
+  - short-yardage conversion: r = 0.08 → k ≈ 90 attempts
+  - fumble rate: r = 0.06 → k ≈ 900 touches (fumbles ≈ luck, matches prior research)
+  - EPA, success, explosive already shrunk by ridge.
+
+- Final components (R/03_adjust.R) → data/player_metrics.parquet: FBS RBs only (~650–740 per season, 2021–26). Ridge EPA/success/explosive; shrunk rec EPA per catch (k=75), short-yardage conv (k=90), fumble rate (k=900); touch share. Percentiles within season.
+- 2024 top 10 by adjusted EPA = Jordan James, RJ Harvey, Skattebo, Woody Marks, Devin Neal, Jeanty, Hampton, Kaleb Johnson (≈ 2025 NFL Draft RB class). Jeanty 98th EPA but 7th receiving: pure runner.
+

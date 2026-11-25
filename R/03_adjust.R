@@ -85,3 +85,63 @@ ridged <- lapply(2021:2026, ridge_adjust) |>
 # Save both adjustments so later steps don't have to wait ~30 min to rebuild them
 write_parquet(adjusted, "data/adjusted_simple.parquet")
 write_parquet(ridged, "data/adjusted_ridge.parquet")
+
+# One row per RB per season: every stat adjusted (ridge) or shrunk, plus percentiles
+# shrink(): pull a small-sample rate toward the avg. k = how many 
+#   "avg plays" to mix in (from the split-half test)
+shrink <- function(rate, n, avg, k) {
+    rate <- coalesce(rate, avg)
+    n <- coalesce(n, 0)
+    (n * rate + k * avg) / (n + k) 
+}
+
+#catches 
+K_REC_EPA <- 75
+#short-yardage attempts 
+K_SY <- 90
+#carries 
+K_FUMBLE <- 900
+
+# Who's a RB each season
+rbs <- lapply(2021:2026, function(y) read_parquet(paste0("cache/player_stats_", y, ".parquet"))) |>
+    bind_rows() |>
+    filter(position == "RB") |>
+    transmute(rush_player_id = as.numeric(athlete_id), season = year) |>
+    distinct()
+
+# FBS teeams each season
+fbs <- lapply(2021:2026, function(y) {
+    read_parquet(paste0("cache/fbs_teams_", y, ".parquet")) |> mutate(season = y) 
+}) |>
+    bind_rows() |>
+    select(pos_team = school, season)
+
+player_metrics <- read_parquet("data/player_seasons.parquet") |>
+    semi_join(rbs, by = c("rush_player_id", "season")) |>
+    semi_join(fbs, by = c("pos_team", "season")) |>
+    left_join(ridged, by = c("rush_player_id", "season")) |>
+    group_by(season) |>
+    mutate(
+        # RB avg that season
+        avg_rec_epa = sum(rec_epa, na.rm = TRUE) / sum(catches, na.rm = TRUE), 
+        avg_sy = sum(sy_success * sy_carries, na.rm = TRUE) / sum(sy_carries), 
+        avg_fumble = sum(fumbles) / sum(carries),
+
+        # Shrunk versions of the stats ridge didn't cover
+        rec_epa_per_catch_shr = shrink(epa_per_catch, catches, avg_rec_epa, K_REC_EPA), 
+        sy_success_shr = shrink(sy_success, sy_carries, avg_sy, K_SY), 
+        fumble_rate_shr       = shrink(fumbles / carries, carries, avg_fumble, K_FUMBLE),
+        
+        # Percentiles (0-100) among FBS running backs that season
+        pct_epa       = percent_rank(ridge_epa) * 100,
+        pct_success   = percent_rank(ridge_success) * 100,
+        pct_explosive = percent_rank(ridge_explosive) * 100,
+        pct_receiving = percent_rank(rec_epa_per_catch_shr) * 100,
+        pct_short_yds = percent_rank(sy_success_shr) * 100,
+        pct_ball_sec  = percent_rank(-fumble_rate_shr) * 100,
+        pct_touch     = percent_rank(touch_share) * 100
+    ) |>
+    ungroup() |>
+    select(-starts_with("avg_"))
+
+write_parquet(player_metrics, "data/player_metrics.parquet")
