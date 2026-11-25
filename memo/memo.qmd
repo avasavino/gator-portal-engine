@@ -7,7 +7,7 @@ format: pdf
 ## What TTS measures
 
 ## Data 
-All data is public and comes from CollegeFootballData.com (CFBD), pulled into R with the cfbfastR package. I used every transfer portal entry from 2022 through 2026, along with season stats for every FBS player from 2021 through 2026. The 2021 season is included so that 2022 transfers have a "before" season. A transfer counts as usable is he moved from one FBS school to another and had at least 10 touches (carries plus catches) in both the season before he transferred and the season after. That leaves 226 usable running back transfers from 2022-2025, which are the players TTS learns from. The 2026 class is still mid-season, so those players get scored, not used for training. 
+All data is public and comes from CollegeFootballData.com (CFBD), pulled into R with the cfbfastR package. I used every transfer portal entry from 2022 through 2026, along with season stats for every FBS player from 2021 through 2026. The 2021 season is included so that 2022 transfers have a "before" season. A transfer counts as usable if he moved from one FBS school to another and had at least 10 touches (carries plus catches) in both the season before he transferred and the season after. That leaves 226 usable running back transfers from 2022-2025, which are the players TTS learns from. The 2026 class is still mid-season, so those players get scored, not used for training. 
 
 | Portal year | RB | WR | QB | TE |
 |---|---|---|---|---|
@@ -19,12 +19,26 @@ All data is public and comes from CollegeFootballData.com (CFBD), pulled into R 
 
 : Usable FBS-to-FBS transfers by portal year and position
 
-This project covers running backs only. Running backs give a large enough sample, and they allow a direct comparison to my 2025 RB Breakdown. PLayers were matched between the portal list and the stat tables by name and school. A few nickname mismatches (for example "Cam" vs. "Cameron") still needs fixing, so these counts are slightly low. 
+This project covers running backs only. Running backs give a large enough sample, and they allow a direct comparison to my 2025 RB Breakdown. Players were matched between the portal list and the stat tables by a cleaned version of their name (ignoring capitalization, punctuation, and suffixes like "Jr."), plus their old school and the season before they transferred. Seven remaining nickname mismatches (for example "Cam" vs. "Cameron") were checked and fixed by hand. The counts above come from an earlier, simpler name match and will be updated once the final training table is built.
+
+
+**Definitions.** A *carry* is any designed run or scramble by a running back. A run is a *success* if it stays on schedule: it gains at least 50% of the yards needed on 1st down, 70% on 2nd down, or 100% on 3rd or 4th down. This uses cfbfastR's built-in `success` flag. A run is *explosive* if it gains 12 or more yards, and that cutoff is fixed for the whole project. *EPA* (expected points added) measures how much a play changed the offense's expected points, given the down, distance, and field position. Receiving is measured per catch: public play-by-play names the receiver on every catch but on only about a third of incomplete passes, so targets can't be counted fairly.
+
+
+**Checking the numbers.** To make sure my EPA per carry was calculated correctly, I compared it to CollegeFootballData's own per-carry value metric (PPA) for the 253 running backs with 100 or more carries in 2024. The two come from different models, so the raw numbers don't match exactly. CFBD's values run about 0.1 points per carry higher across the board. But they rank backs in nearly the same order (Spearman rank correlation = 0.87), and no single back stood out as a large disagreement. Because TTS compares backs to each other rather than using the raw values, the agreement in rankings is what matters.
+
 
 ## How it was built 
+
+**Adjusting for opponents.** A carry against Georgia is harder than a carry against an FCS defense, so raw numbers favor backs with easy schedules. To fix this, I rated every runner and every defense at the same time using ridge regression: the model looks at every carry of the season and splits the credit between the back who ran it and the defense he ran against. Ridge also pulls players with few carries toward average, so a back can't earn an extreme rating from a handful of lucky runs. This is the same approach cfbfastR uses for its opponent-adjusted team ratings.
+
+To choose between this and a simpler schedule-strength adjustment, I tested which version repeats best from one season to the next for backs who stayed at the same school (296 backs, 100+ carries). Ridge repeated slightly best (rank correlation 0.285, vs. 0.281 simple and 0.259 unadjusted). All three are low: rushing efficiency is noisy from year to year, which is why TTS also leans on more stable signals.
+
 
 ## Does it work (backtest) 
 
 ## Florida fit 
 
 ## Limitations 
+
+- **No targets.** Public play-by-play doesn't name the intended receiver on most incomplete passes, so receiving is measured per catch. TTS can't see drops or passes thrown a back's way that he didn't catch.
