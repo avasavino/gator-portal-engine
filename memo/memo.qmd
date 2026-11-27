@@ -32,7 +32,8 @@ This project covers running backs only. Running backs give a large enough sample
 
 **Adjusting for opponents.** A carry against Georgia is harder than a carry against an FCS defense, so raw numbers favor backs with easy schedules. To fix this, I rated every runner and every defense at the same time using ridge regression: the model looks at every carry of the season and splits the credit between the back who ran it and the defense he ran against. Ridge also pulls players with few carries toward average, so a back can't earn an extreme rating from a handful of lucky runs. This is the same approach cfbfastR uses for its opponent-adjusted team ratings.
 
-To choose between this and a simpler schedule-strength adjustment, I tested which version repeats best from one season to the next for backs who stayed at the same school (296 backs, 100+ carries). Ridge repeated slightly best (rank correlation 0.285, vs. 0.281 simple and 0.259 unadjusted). All three are low: rushing efficiency is noisy from year to year, which is why TTS also leans on more stable signals.
+To choose between this and a simpler schedule-strength adjustment, I tested which version repeats best from one season to the next for backs who stayed at the same school (296 backs, 100+ carries). Ridge repeated best (rank correlation 0.313, vs. 0.281 simple and 0.259 unadjusted).
+ All three are low: rushing efficiency is noisy from year to year, which is why TTS also leans on more stable signals.
 
 
 ## Does it work (backtest) 

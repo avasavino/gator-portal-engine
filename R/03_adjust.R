@@ -102,6 +102,13 @@ K_SY <- 90
 #carries 
 K_FUMBLE <- 900
 
+#percentiles compare everyone to backs with 50+ carries 
+MIN_CARRIES_PCT <- 50
+
+#pct_vs(): percentile (0-100) compared to a pool of qualified backs, 
+#   so nobody gets ranked against hundreds of 3-carry backups 
+pct_vs <- function(x, pool) ecdf(x[pool])(x) * 100
+
 # Who's a RB each season
 rbs <- lapply(2021:2026, function(y) read_parquet(paste0("cache/player_stats_", y, ".parquet"))) |>
     bind_rows() |>
@@ -132,14 +139,15 @@ player_metrics <- read_parquet("data/player_seasons.parquet") |>
         sy_success_shr = shrink(sy_success, sy_carries, avg_sy, K_SY), 
         fumble_rate_shr       = shrink(fumbles / carries, carries, avg_fumble, K_FUMBLE),
         
-        # Percentiles (0-100) among FBS running backs that season
-        pct_epa       = percent_rank(ridge_epa) * 100,
-        pct_success   = percent_rank(ridge_success) * 100,
-        pct_explosive = percent_rank(ridge_explosive) * 100,
-        pct_receiving = percent_rank(rec_epa_per_catch_shr) * 100,
-        pct_short_yds = percent_rank(sy_success_shr) * 100,
-        pct_ball_sec  = percent_rank(-fumble_rate_shr) * 100,
-        pct_touch     = percent_rank(touch_share) * 100
+                # Percentiles (0-100) vs FBS backs with 50+ carries that season
+        qualified     = carries >= MIN_CARRIES_PCT,
+        pct_epa       = pct_vs(ridge_epa, qualified),
+        pct_success   = pct_vs(ridge_success, qualified),
+        pct_explosive = pct_vs(ridge_explosive, qualified),
+        pct_receiving = pct_vs(rec_epa_per_catch_shr, qualified),
+        pct_short_yds = pct_vs(sy_success_shr, qualified),
+        pct_ball_sec  = pct_vs(-fumble_rate_shr, qualified),
+        pct_touch     = pct_vs(touch_share, qualified)
     ) |>
     ungroup() |>
     select(-starts_with("avg_"))
