@@ -48,3 +48,29 @@ training <- read_parquet("data/transfers.parquet") |>
         starter_pre     = touch_share_pre > 0.40
     )
 
+# --- Baselines: the simple ways TTS has to beat -------------------------------------------------
+# Only backs with a real "after" number (50+ carries at new school) 
+judged <- training |> filter(earned_playing_time) 
+test_2025 <- judged |> filter(season = 2025) 
+
+# score_predictor(): how well does one number predict the after-transfer result 
+# rank_cor = do they put backs in the same order (1 = perfect, 0 = none) 
+# top_vs_bottom = how much more EPA/carry the top quarter produced than the bottom quarter 
+score_predictor <- function(data, col) {
+    data <- data[!is.na(data[[col]], 4), ]
+    data$quarter <- ntile(data[[col]], 4)
+    tibble(
+        predictor = col, 
+        backs = nrow(data), 
+        rank_cor = cor(data[[col]], data$ridge_epa_post, method = "spearman"), 
+        top_vs_bottom = mean(data$ridge_epa_post[data$quarter == 4]) - 
+                        mean(data$ridge_epa_post[data$quarter == 1])
+
+    )
+}
+
+baselines <- bind_rows(
+    score_predictor(test_2025, "epa_raw_pre"), 
+    score_predictor(test_2025, "rating")
+)
+print(baselines)
